@@ -1,0 +1,6 @@
+renpho-py==1.2.0
+garminconnect>=0.3.0
+curl_cffi
+keyring
+tzdata
+tzlocal

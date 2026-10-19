@@ -1,0 +1,22 @@
+# Python environments and generated files
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Local credentials and Garmin sessions
+.env
+.env.*
+!.env.example
+.garminconnect/
+garmin_tokens.json
+oauth1_token.json
+oauth2_token.json
+
+# Personal weigh-in exports and sync state
+*.csv
+state.json
+state.tmp
+import/
+*.log
