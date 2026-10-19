@@ -21,8 +21,8 @@ Windows only (it uses Windows Credential Manager and `.bat` launchers).
 1. Install Python 3.12 or later from python.org and tick "Add python.exe to PATH".
 2. Copy these files to a local folder, e.g. `C:\Tools\renpho-garmin-sync` (better outside
    OneDrive): `renpho_garmin_sync.py`, `renpho_csv.py`, `requirements.txt`, `install.bat`,
-   `sync.bat` and, optionally, `README.md` and `tests\`. Do **not** copy `.venv` or
-   `__pycache__`.
+   `sync.bat`, `THIRD_PARTY_NOTICES.md` and, optionally, `README.md` and `tests\`.
+   Do **not** copy `.venv` or `__pycache__`.
 3. Double-click `install.bat`.
 
 ## Getting the data out of Renpho
@@ -100,3 +100,26 @@ should match what the Renpho app shows. If the times are off by whole hours, set
   "Forgot password".
 - Garmin's "muscle mass" is skeletal muscle mass, which is why `csv_muscle` defaults to
   `skeletal` (Renpho's total muscle mass would look far too high in Garmin).
+
+## Acknowledgements
+
+This project relies on the following open-source libraries:
+
+| Project | Contribution | License |
+|---|---|---|
+| [renpho-py](https://github.com/ChocoTonic/renpho-py) | Unofficial Renpho API client and the basis for the adapted Renpho login implementation | MIT |
+| [python-garminconnect](https://github.com/cyberjunky/python-garminconnect) | Garmin Connect authentication, weigh-in queries and body-composition uploads | MIT |
+| [curl_cffi](https://github.com/lexiforest/curl_cffi) | HTTP/TLS support, included as a dependency | MIT |
+| [keyring](https://github.com/jaraco/keyring) | Password storage through Windows Credential Manager | MIT |
+| [tzdata](https://github.com/python/tzdata) | IANA time-zone data for Python, including on Windows | Apache-2.0 |
+| [tzlocal](https://github.com/regebro/tzlocal) | Detection of the computer's local time zone | MIT |
+
+Special thanks to **ChocoTonic** for `renpho-py` and **danvaneijck** for the original
+`renpho-api` on which it builds. The `renpho_login` function in
+[`renpho_garmin_sync.py`](./renpho_garmin_sync.py) adapts the login implementation from
+`renpho-py` 1.2.0 to allow a configurable account region.
+
+The applicable upstream copyright and full MIT license notice for that adapted code
+are preserved in [Third-party notices](./THIRD_PARTY_NOTICES.md). Keep that notice with
+copies or distributions of the adapted code. Each dependency remains subject to its
+own license.
