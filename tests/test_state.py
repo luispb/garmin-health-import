@@ -6,7 +6,7 @@ from pathlib import Path
 from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-import renpho_garmin_sync as s  # noqa: E402
+import garmin_health_import as s  # noqa: E402
 
 
 class StateSaveTests(unittest.TestCase):

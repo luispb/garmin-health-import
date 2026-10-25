@@ -2,7 +2,7 @@
 
 ## renpho-py 1.2.0
 
-The `renpho_login` function in [`renpho_garmin_sync.py`](./renpho_garmin_sync.py)
+The `renpho_login` function in [`garmin_health_import.py`](./garmin_health_import.py)
 adapts the login implementation from
 [`renpho-py` 1.2.0](https://github.com/ChocoTonic/renpho-py/tree/v1.2.0),
 which builds on the original `renpho-api`. The adaptation allows a configurable

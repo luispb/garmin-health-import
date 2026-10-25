@@ -19,4 +19,8 @@ oauth2_token.json
 state.json
 state.tmp
 import/
+google-fit/
+*com.google.blood_pressure*.json
+takeout-*.zip
+Takeout/
 *.log

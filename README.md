@@ -1,11 +1,16 @@
-# Renpho → Garmin Connect
+# garmin-health-import
+
+Import health measurements from Renpho and Google Fit into Garmin Connect, with
+duplicate detection.
 
 Copies your RENPHO Health weigh-ins (weight, body fat, water, muscle, bone, visceral fat,
 BMR, metabolic age, BMI) to Garmin Connect without creating duplicates.
+Also imports individual **blood-pressure readings from Google Fit exports** into
+Garmin Connect, including checking for readings previously entered by hand.
 
 Windows only (it uses Windows Credential Manager and `.bat` launchers).
 
-## Duplicate rule
+## Weight duplicate rule
 
 - If Garmin already has a weigh-in on a day (entered by hand or from another source),
   **nothing from Renpho is uploaded for that day**.
@@ -19,9 +24,11 @@ Windows only (it uses Windows Credential Manager and `.bat` launchers).
 ## Installation (once per computer)
 
 1. Install Python 3.12 or later from python.org and tick "Add python.exe to PATH".
-2. Copy these files to a local folder, e.g. `C:\Tools\renpho-garmin-sync` (better outside
-   OneDrive): `renpho_garmin_sync.py`, `renpho_csv.py`, `requirements.txt`, `install.bat`,
-   `sync.bat`, `THIRD_PARTY_NOTICES.md` and, optionally, `README.md` and `tests\`.
+2. Download or clone [garmin-health-import](https://github.com/luispb/garmin-health-import)
+   to a local folder, e.g. `C:\Tools\garmin-health-import` (better outside OneDrive).
+   When copying individual files, include `garmin_health_import.py`, `renpho_csv.py`, `requirements.txt`, `install.bat`,
+   `google_fit_blood_pressure.py`, `sync.bat`, `THIRD_PARTY_NOTICES.md` and, optionally,
+   `renpho_garmin_sync.py` (compatibility launcher), `README.md` and `tests\`.
    Do **not** copy `.venv` or `__pycache__`.
 3. Double-click `install.bat`.
 
@@ -41,6 +48,84 @@ anything already processed is not uploaded again. If the `import` folder is empt
 tries the Renpho API. Options: `--source csv|api|auto` and `--csv PATH` (file or folder).
 
 English and Spanish exports are recognised, in kg or lb, with comma or semicolon delimiters.
+
+## Google Fit blood pressure
+
+This integration imports files exported from Google Fit. **It does not download readings
+automatically from the Google Fit API.** Google stopped accepting new Fit API developers
+on May 1, 2024 and [supports the legacy APIs only until the end of 2026](
+https://developer.android.com/health-and-fitness/health-connect/migration/fit).
+An existing Google Fit app account alone does not provide API access. This file-based
+import does not require a Google Cloud project, OAuth credentials or a Google password.
+
+1. Open [Google Takeout](https://takeout.google.com/), deselect other products, select
+   **Fit** and include **All Data** (individual measurements in JSON). Labels may vary
+   by language. Create the export and download its ZIP.
+2. Keep the ZIP outside the source repository, for example in
+   `<OneDrive>\Apps\RenphoGarminSync\google-fit`. You can also use extracted JSON files.
+3. Open a terminal in this script's folder and preview the import:
+
+   ```bat
+   sync.bat --blood-pressure-only --google-fit "C:\Exports\takeout-fit.zip" --dry-run
+   ```
+
+4. Check the dates, times and pressures, then repeat without `--dry-run`:
+
+   ```bat
+   sync.bat --blood-pressure-only --google-fit "C:\Exports\takeout-fit.zip"
+   ```
+
+`--google-fit` accepts a JSON file, a ZIP, or a folder containing JSON/ZIP exports (including
+split Takeout archives). ZIP members are read without extracting them. When the exports
+are in the default `google-fit` folder next to `state.json`, use:
+
+```bat
+sync.bat --blood-pressure-only --dry-run
+sync.bat --blood-pressure-only
+```
+
+To import both Renpho weight and Google Fit blood pressure in one run:
+
+```bat
+sync.bat --google-fit "C:\Exports\takeout-fit.zip" --dry-run
+sync.bat --google-fit "C:\Exports\takeout-fit.zip"
+```
+
+Existing commands without either of these options continue to sync Renpho weight only.
+`--since YYYY-MM-DD` filters both types of measurement using the configured time zone.
+On an existing installation, rerun `install.bat` to install **garminconnect >= 0.3.14**,
+which supports blood pressure without a pulse value.
+
+### Blood-pressure duplicate rule
+
+- A reading is already in Garmin if **systolic and diastolic values match** and its
+  timestamp is within **±60 seconds**. This includes entries created manually. Pulse,
+  notes and source names do not need to match.
+- Other readings on that day remain eligible. The weight rule that blocks an entire
+  day does not apply to blood pressure, nor does the 10-minute weight repeat merge.
+- Exact duplicates across files/source streams are removed. Progress is saved after
+  every upload in a separate `blood_pressure_processed` section of `state.json`.
+- If progress is lost after an upload, the next run checks Garmin again before writing.
+  If Garmin cannot be read or its response cannot be understood, the import stops.
+- Adjust `blood_pressure_tolerance_seconds` in the state file (0–3600; default 60) if
+  the times you entered manually differ. Matching values at another time are treated
+  as a separate reading. Identical readings inside the tolerance may be indistinguishable.
+
+Only raw `com.google.blood_pressure` points are imported. Daily/aggregated CSV averages
+are **not** individual readings and are never uploaded. If the export contains no raw
+blood-pressure points, the tool stops with an explanation. Readings only stored on the
+phone in Health Connect may not appear in a Google Fit export; exporting those requires
+a separate source integration. There is no Health Connect or Google Health API client here.
+
+Values are in **mmHg**, rounded to the nearest integer (half up) for Garmin. Values outside
+the Garmin library's supported ranges (systolic 70–260, diastolic 40–150) stop the import
+for review; they are not silently discarded. Google Fit's blood-pressure type has body
+position and measurement-location fields but no pulse, so no pulse value is invented.
+Uploads retain the measurement's time and use the note `Imported from Google Fit`.
+
+The importer has automated offline tests using synthetic exports and Garmin responses.
+Validate a real Takeout export with `--dry-run` before the first upload; live-account
+compatibility has not been tested by the development test suite.
 
 ## Usage
 
@@ -65,14 +150,32 @@ it stopped and does not upload anything twice.
 
 ## State file
 
-`<OneDrive>\Apps\RenphoGarminSync\state.json` stores which Renpho measurements have already
-been processed, plus the settings. The personal OneDrive is used if it is installed,
+`<OneDrive>\Apps\RenphoGarminSync\state.json` stores which weight and blood-pressure
+measurements have already been processed, plus the settings. Existing version-1 state
+files are upgraded without losing their weight history or settings. The personal OneDrive is used if it is installed,
 otherwise the work OneDrive. Use `--state-dir` to choose another folder. Do not run the tool
 on two computers at the same time, and do not share your state file with another person.
 
 The repository's `.gitignore` excludes local CSV exports, sync state, Garmin session
 files, `.env` files and Python environments. Do not commit personal health data or
 credentials, even when using a custom state folder.
+
+### Upgrading from renpho-garmin-sync
+
+The project is now **garmin-health-import**. `sync.bat` runs the new
+`garmin_health_import.py` entry point; `renpho_garmin_sync.py` remains a compatibility
+launcher for existing commands and imports. Keep the new main script when updating.
+
+The existing `Apps\RenphoGarminSync` state folder and `RenphoGarminSync` Windows
+Credential Manager identifiers are retained so the saved history and credentials
+continue to work. There is no need to move or reset them. Your local checkout folder
+can also keep its existing name.
+
+For an existing Git clone, update the remote URL:
+
+```bat
+git remote set-url origin https://github.com/luispb/garmin-health-import.git
+```
 
 ### Settings (the `config` section of `state.json`)
 
@@ -87,6 +190,7 @@ credentials, even when using a custom state folder.
 | `muscle_unit` | Renpho API only: `percent` / `kg` | `percent` |
 | `muscle_source` | Renpho API only: `muscle` / `sinew_kg` (lean mass in kg) | `muscle` |
 | `renpho_area_codes` | Renpho API only: account regions to try, in order | `["ES", "US"]` |
+| `blood_pressure_tolerance_seconds` | Maximum time difference for identical systolic/diastolic readings already in Garmin (0–3600 seconds) | `60` |
 
 Check the values in your first `--dry-run`: muscle and bone should be in kg, and the times
 should match what the Renpho app shows. If the times are off by whole hours, set `timezone`.
@@ -108,7 +212,7 @@ This project relies on the following open-source libraries:
 | Project | Contribution | License |
 |---|---|---|
 | [renpho-py](https://github.com/ChocoTonic/renpho-py) | Unofficial Renpho API client and the basis for the adapted Renpho login implementation | MIT |
-| [python-garminconnect](https://github.com/cyberjunky/python-garminconnect) | Garmin Connect authentication, weigh-in queries and body-composition uploads | MIT |
+| [python-garminconnect](https://github.com/cyberjunky/python-garminconnect) | Garmin Connect authentication, weight/body-composition and blood-pressure queries/uploads | MIT |
 | [curl_cffi](https://github.com/lexiforest/curl_cffi) | HTTP/TLS support, included as a dependency | MIT |
 | [keyring](https://github.com/jaraco/keyring) | Password storage through Windows Credential Manager | MIT |
 | [tzdata](https://github.com/python/tzdata) | IANA time-zone data for Python, including on Windows | Apache-2.0 |
@@ -116,7 +220,7 @@ This project relies on the following open-source libraries:
 
 Special thanks to **ChocoTonic** for `renpho-py` and **danvaneijck** for the original
 `renpho-api` on which it builds. The `renpho_login` function in
-[`renpho_garmin_sync.py`](./renpho_garmin_sync.py) adapts the login implementation from
+[`garmin_health_import.py`](./garmin_health_import.py) adapts the login implementation from
 `renpho-py` 1.2.0 to allow a configurable account region.
 
 The applicable upstream copyright and full MIT license notice for that adapted code

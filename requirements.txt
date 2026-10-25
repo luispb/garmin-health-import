@@ -1,5 +1,5 @@
 renpho-py==1.2.0
-garminconnect>=0.3.0
+garminconnect>=0.3.14
 curl_cffi
 keyring
 tzdata

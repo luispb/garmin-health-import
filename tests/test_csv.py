@@ -8,7 +8,7 @@ from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import renpho_csv as rc  # noqa: E402
-import renpho_garmin_sync as s  # noqa: E402
+import garmin_health_import as s  # noqa: E402
 
 EN = """Date,Time,Weight(kg),BMI,Body Fat(%),Fat-free Body Weight(kg),Subcutaneous Fat(%),Visceral Fat,Body Water(%),Skeletal Muscle(%),Muscle Mass(kg),Bone Mass(kg),Protein(%),BMR(kcal),Metabolic Age,Remarks
 2026/10/18,07:31:12,80.4,24.8,21.3,63.3,18.9,9,54.2,49.1,59.8,3.12,17.6,1712,41,
