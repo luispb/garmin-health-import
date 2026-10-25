@@ -32,8 +32,7 @@ from google_fit_blood_pressure import (
     load_google_fit,
 )
 
-# Stable storage/credential identifier: keep existing OneDrive history and keyring entries.
-APP_NAME = "RenphoGarminSync"
+APP_NAME = "GarminHealthImport"
 FALLBACK_TZ = "Europe/Madrid"
 LOCAL_TZ = ZoneInfo(FALLBACK_TZ)  # replaced at start-up by the configured time zone
 GARMIN_TOKENSTORE = Path.home() / ".garminconnect"

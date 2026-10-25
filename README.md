@@ -28,7 +28,7 @@ Windows only (it uses Windows Credential Manager and `.bat` launchers).
    to a local folder, e.g. `C:\Tools\garmin-health-import` (better outside OneDrive).
    When copying individual files, include `garmin_health_import.py`, `renpho_csv.py`, `requirements.txt`, `install.bat`,
    `google_fit_blood_pressure.py`, `sync.bat`, `THIRD_PARTY_NOTICES.md` and, optionally,
-   `renpho_garmin_sync.py` (compatibility launcher), `README.md` and `tests\`.
+   `README.md` and `tests\`.
    Do **not** copy `.venv` or `__pycache__`.
 3. Double-click `install.bat`.
 
@@ -39,7 +39,7 @@ try the unofficial Renpho API, but that login fails for some accounts (`code=-11
 
 1. In the app, open your **Weight** details, find the history (clock icon) → **Select data**
    → "…" → **Select all data** → **share** icon. Menu names vary between app versions.
-2. Save the file to OneDrive, in `Apps\RenphoGarminSync\import` (the tool creates this
+2. Save the file to OneDrive, in `Apps\GarminHealthImport\import` (the tool creates this
    folder the first time it runs).
 3. Run `sync.bat --dry-run`, then `sync.bat`.
 
@@ -62,7 +62,7 @@ import does not require a Google Cloud project, OAuth credentials or a Google pa
    **Fit** and include **All Data** (individual measurements in JSON). Labels may vary
    by language. Create the export and download its ZIP.
 2. Keep the ZIP outside the source repository, for example in
-   `<OneDrive>\Apps\RenphoGarminSync\google-fit`. You can also use extracted JSON files.
+   `<OneDrive>\Apps\GarminHealthImport\google-fit`. You can also use extracted JSON files.
 3. Open a terminal in this script's folder and preview the import:
 
    ```bat
@@ -141,7 +141,8 @@ sync.bat --reset-credentials
 
 The first run asks for your Garmin Connect email, your Garmin password and your MFA code if
 you have MFA turned on (and your Renpho email and password only if the Renpho API is used).
-Passwords are saved in Windows Credential Manager and Garmin session tokens in
+Passwords are saved in Windows Credential Manager under `GarminHealthImport:Garmin`
+and `GarminHealthImport:Renpho` (when the Renpho API is used), and Garmin session tokens in
 `%USERPROFILE%\.garminconnect`. Neither goes to OneDrive, so this first login has to be done
 on each computer.
 
@@ -150,32 +151,14 @@ it stopped and does not upload anything twice.
 
 ## State file
 
-`<OneDrive>\Apps\RenphoGarminSync\state.json` stores which weight and blood-pressure
-measurements have already been processed, plus the settings. Existing version-1 state
-files are upgraded without losing their weight history or settings. The personal OneDrive is used if it is installed,
+`<OneDrive>\Apps\GarminHealthImport\state.json` stores which weight and blood-pressure
+measurements have already been processed, plus the settings. The personal OneDrive is used if it is installed,
 otherwise the work OneDrive. Use `--state-dir` to choose another folder. Do not run the tool
 on two computers at the same time, and do not share your state file with another person.
 
 The repository's `.gitignore` excludes local CSV exports, sync state, Garmin session
 files, `.env` files and Python environments. Do not commit personal health data or
 credentials, even when using a custom state folder.
-
-### Upgrading from renpho-garmin-sync
-
-The project is now **garmin-health-import**. `sync.bat` runs the new
-`garmin_health_import.py` entry point; `renpho_garmin_sync.py` remains a compatibility
-launcher for existing commands and imports. Keep the new main script when updating.
-
-The existing `Apps\RenphoGarminSync` state folder and `RenphoGarminSync` Windows
-Credential Manager identifiers are retained so the saved history and credentials
-continue to work. There is no need to move or reset them. Your local checkout folder
-can also keep its existing name.
-
-For an existing Git clone, update the remote URL:
-
-```bat
-git remote set-url origin https://github.com/luispb/garmin-health-import.git
-```
 
 ### Settings (the `config` section of `state.json`)
 
